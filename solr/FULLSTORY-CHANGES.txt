@@ -2,3 +2,4 @@
 
 * fs.ignoreconflicts (Scott Blum)
 * FullStory: special OOMKILLER handling for spaces (Scott Blum)
+* SOLR-13684: failOnVersionConflicts param should be added to the DistributedUpdateProcessor whitelist params (noble)
