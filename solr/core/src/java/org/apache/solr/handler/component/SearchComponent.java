@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrInfoBean;
 import org.apache.solr.metrics.SolrMetricsContext;
 import org.apache.solr.search.facet.FacetModule;
@@ -85,7 +87,13 @@ public abstract class SearchComponent implements SolrInfoBean, NamedListInitiali
     this.name = name;
   }
 
-  //////////////////////// SolrInfoBean methods //////////////////////
+  /**
+   * Built-in component json keys are explicitly handled in RequestUtil
+   * Override getJsonKey for custom SearchComponents so the custom json key can be parsed by RequestUtil
+   */
+  public String getJsonKey() { return null; }
+
+  //////////////////////// SolrInfoMBeans methods //////////////////////
 
   @Override
   public String getName() {
