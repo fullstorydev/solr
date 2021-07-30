@@ -89,8 +89,8 @@ public class SizeLimitedDistributedMap extends DistributedMap {
       long topElementMzxId = priorityQueue.top(); // can be null, but highly unlikely
 
       for (String child : children) {
-        Long id = childToModificationZxid.get(child);
-        if (id != null && id <= topElementMzxId) {
+        Stat stat = zookeeper.exists(dir + "/" + child, null, true);
+        if (stat != null && stat.getMzxid() <= topElementMzxId) {
           zookeeper.delete(dir + "/" + child, -1, true);
           if (onOverflowObserver != null)
             onOverflowObserver.onChildDelete(child.substring(PREFIX.length()));
