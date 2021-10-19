@@ -21,6 +21,8 @@ import java.util.function.IntFunction;
 import org.apache.lucene.queries.function.ValueSource;
 import org.apache.lucene.queries.function.valuesource.ConstValueSource;
 import org.apache.solr.SolrTestCase;
+import org.apache.solr.common.util.JavaBinCodec;
+import org.apache.solr.common.util.JavaBinDecoder;
 import org.apache.solr.search.facet.FacetContext;
 import org.apache.solr.search.facet.FacetMerger;
 import org.apache.solr.search.facet.SimpleAggValueSource;
