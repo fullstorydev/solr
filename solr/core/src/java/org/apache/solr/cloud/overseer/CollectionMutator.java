@@ -31,6 +31,8 @@ import org.apache.solr.client.solrj.cloud.DistribStateManager;
 import org.apache.solr.client.solrj.cloud.SolrCloudManager;
 import org.apache.solr.client.solrj.request.CollectionAdminRequest;
 import org.apache.solr.common.cloud.*;
+import org.apache.solr.common.params.CommonParams;
+import org.apache.solr.common.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,9 +119,11 @@ public class CollectionMutator {
           log.error("trying to set perReplicaState to {} from {}", val, coll.isPerReplicaState());
           continue;
         }
-        replicaOps =
-            PerReplicaStatesOps.modifyCollection(
-                coll, enable, PerReplicaStates.fetch(coll.getZNode(), zkClient, null));
+        PerReplicaStates prs = PerReplicaStates.fetch(coll.getZNode(), zkClient, null);
+        replicaOps = PerReplicaStatesOps.modifyCollection(coll, enable, prs);
+        if(!enable) {
+          coll = updateReplicas(coll, prs);
+        }
       }
 
       if (message.containsKey(prop)) {
@@ -168,12 +172,51 @@ public class CollectionMutator {
     }
   }
 
-  public static DocCollection updateSlice(
-      String collectionName, DocCollection collection, Slice slice) {
-    Map<String, Slice> slices =
-        new LinkedHashMap<>(collection.getSlicesMap()); // make a shallow copy
-    slices.put(slice.getName(), slice);
-    return collection.copyWithSlices(slices);
+  private DocCollection updateReplicas(DocCollection coll, PerReplicaStates prs) {
+    //we are disabling PRS. Update the replica states
+    Map<String, Slice> modifiedSlices = new HashMap<>();
+    coll.forEachReplica((s, replica) -> {
+      PerReplicaStates.State prsState = prs.states.get(replica.getName());
+      if (prsState != null) {
+        if (prsState.state != replica.getState()) {
+          Slice slice = modifiedSlices.getOrDefault(replica.shard, coll.getSlice(replica.shard));
+          replica = new ReplicaMutator(cloudManager).setState(replica, prsState.state.toString());
+          modifiedSlices.put(replica.shard, slice.copyWith(replica));
+        }
+        if (prsState.isLeader != replica.isLeader()) {
+          Slice slice = modifiedSlices.getOrDefault(replica.shard, coll.getSlice(replica.shard));
+          replica = prsState.isLeader ?
+              new ReplicaMutator(cloudManager).setLeader(replica) :
+              new ReplicaMutator(cloudManager).unsetLeader(replica);
+          modifiedSlices.put(replica.shard, slice.copyWith(replica));
+        }
+      }
+    });
+    if(!modifiedSlices.isEmpty()) {
+      return coll.copyWithSlices(modifiedSlices);
+    }
+    return coll;
+  }
+
+  public static DocCollection updateSlice(String collectionName, DocCollection collection, Slice slice) {
+    DocCollection newCollection = null;
+    Map<String, Slice> slices;
+
+    if (collection == null) {
+      //  when updateSlice is called on a collection that doesn't exist, it's currently when a core is publishing itself
+      // without explicitly creating a collection.  In this current case, we assume custom sharding with an "implicit" router.
+      slices = new LinkedHashMap<>(1);
+      slices.put(slice.getName(), slice);
+      Map<String, Object> props = new HashMap<>(1);
+      props.put(DocCollection.DOC_ROUTER, Utils.makeMap(CommonParams.NAME, ImplicitDocRouter.NAME));
+      newCollection = new DocCollection(collectionName, slices, props, new ImplicitDocRouter());
+    } else {
+      slices = new LinkedHashMap<>(collection.getSlicesMap()); // make a shallow copy
+      slices.put(slice.getName(), slice);
+      newCollection = collection.copyWithSlices(slices);
+    }
+
+    return newCollection;
   }
 
   static boolean checkCollectionKeyExistence(ZkNodeProps message) {
