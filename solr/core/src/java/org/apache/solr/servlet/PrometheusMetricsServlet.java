@@ -98,6 +98,7 @@ public final class PrometheusMetricsServlet extends BaseSolrServlet {
     writer.flush();
   }
 
+  @SuppressWarnings("rawtypes")
   static void getSharedCacheMetrics(List<PrometheusMetric> results, CoreContainer cores, Map<String, PrometheusMetricType> types) {
     Object value = Optional.of(cores)
         .map(CoreContainer::getZkController)
@@ -111,6 +112,7 @@ public final class PrometheusMetricsServlet extends BaseSolrServlet {
     if (value == null) {
       return;
     }
+    @SuppressWarnings("unchecked")
     Map<String, NamedList<Number>> cacheStats = (Map<String, NamedList<Number>>) value;
     for(Map.Entry<String, NamedList<Number>> cacheStat : cacheStats.entrySet()) {
       String cache = cacheStat.getKey().toLowerCase(Locale.ROOT);
@@ -444,7 +446,8 @@ public final class PrometheusMetricsServlet extends BaseSolrServlet {
     static String normalize(String name) {
       StringBuilder builder = new StringBuilder();
       boolean modified = false;
-      for(char ch : name.toCharArray()) {
+      for(int i=0; i<name.length(); i++) {
+        char ch = name.charAt(i);
         if (ch == ' ') {
           builder.append('_');
           modified = true;

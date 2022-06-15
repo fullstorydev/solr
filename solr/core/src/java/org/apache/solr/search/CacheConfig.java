@@ -96,6 +96,7 @@ public class CacheConfig implements MapSerializable {
     return result;
   }
 
+  @SuppressWarnings("rawtypes")
   public static CacheConfig getConfig(SolrConfig solrConfig, ConfigNode node, String xpath) {
     if (!node.exists() || !"true".equals(node.attributes().get("enabled", "true"))) {
       Map<String, Object> m = solrConfig.getOverlay().getEditableSubProperties(xpath);
@@ -105,7 +106,7 @@ public class CacheConfig implements MapSerializable {
     }
     return getConfig(solrConfig, node.name(), node.attributes().asMap(), xpath);
   }
-
+  @SuppressWarnings("rawtypes")
   public static CacheConfig getConfig(
       SolrConfig solrConfig, String nodeName, Map<String, String> attrs, String xpath) {
     CacheConfig config = new CacheConfig();
@@ -158,6 +159,7 @@ public class CacheConfig implements MapSerializable {
     return config;
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public SolrCache newInstance(SolrCore core) {
     try {
       SolrCache cache = newInstance(core, clazz.get());
@@ -171,6 +173,7 @@ public class CacheConfig implements MapSerializable {
     }
   }
 
+  @SuppressWarnings("rawtypes")
   private SolrCache newInstance(SolrCore core, Class<? extends SolrCache> clazz) throws Exception {
     for (Constructor<?> con : clazz.getConstructors()) {
       Class<?>[] types = con.getParameterTypes();
