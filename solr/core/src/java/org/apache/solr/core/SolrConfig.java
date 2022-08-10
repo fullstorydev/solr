@@ -216,23 +216,26 @@ public class SolrConfig implements MapSerializable {
     Map<String, IndexSchemaFactory.VersionedConfig> configCache = null;
     if (loader.getCoreContainer() != null && loader.getCoreContainer().getObjectCache() != null) {
       configCache =
-          (Map<String, IndexSchemaFactory.VersionedConfig>)
-              loader
-                  .getCoreContainer()
-                  .getObjectCache()
-                  .computeIfAbsent(
-                      ConfigSetService.ConfigResource.class.getName(),
-                      s -> new ConcurrentHashMap<>());
-      ResourceProvider rp = new ResourceProvider(loader.openResource(name));
-      IndexSchemaFactory.VersionedConfig cfg =
-          rp.fileName == null ? null : configCache.get(rp.fileName);
-      if (cfg != null) {
-        if (rp.hash != -1) {
-          if (rp.hash == cfg.version) {
-            log.debug("LOADED_FROM_CACHE");
-            root = cfg.data;
-          } else {
-            readXml(loader, name, configCache, rp);
+              (Map<String, IndexSchemaFactory.VersionedConfig>)
+                      loader
+                              .getCoreContainer()
+                              .getObjectCache()
+                              .computeIfAbsent(
+                                      ConfigSetService.ConfigResource.class.getName(),
+                                      s -> new ConcurrentHashMap<>());
+      root = IndexSchemaFactory.checkVersionAndLoad(name, loader, configCache);
+      if (root == null) {
+        ResourceProvider rp = new ResourceProvider(loader.openResource(name));
+        IndexSchemaFactory.VersionedConfig cfg =
+                rp.fileName == null ? null : configCache.get(rp.fileName);
+        if (cfg != null) {
+          if (rp.hash != -1) {
+            if (rp.hash == cfg.version) {
+              log.debug("LOADED_FROM_CACHE");
+              root = cfg.data;
+            } else {
+              readXml(loader, name, configCache, rp);
+            }
           }
         }
       }
