@@ -242,4 +242,28 @@ public class PerReplicaStatesIntegrationTest extends SolrCloudTestCase {
       cluster.shutdown();
     }
   }
+
+  public void testResourceCaching() throws Exception {
+    String COLL = "trc";
+    MiniSolrCloudCluster cluster =
+            configureCluster(2)
+                    .withJettyConfig(jetty -> jetty.enableV2(true))
+                    .addConfig(
+                            "conf",
+                            getFile("solrj")
+                                    .toPath()
+                                    .resolve("solr")
+                                    .resolve("configsets")
+                                    .resolve("streaming")
+                                    .resolve("conf"))
+                    .configure();
+
+    try {
+      CollectionAdminRequest.createCollection(COLL, "conf", 16, 1)
+              .process(cluster.getSolrClient());
+      cluster.waitForActiveCollection(COLL, 16, 16);
+    } finally {
+      cluster.shutdown();
+    }
+  }
 }
