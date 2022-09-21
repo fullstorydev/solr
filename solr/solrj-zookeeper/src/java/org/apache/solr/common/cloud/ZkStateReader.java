@@ -510,6 +510,28 @@ public class ZkStateReader implements SolrCloseable {
           return;
         }
       } else if (collectionWatches.watchedCollections().contains(collection)) {
+        DocCollection current = collectionWatches.getDocCollection(collection);
+        if(current != null) {
+          String collectionPath = getCollectionPath(collection);
+          Stat stat = zkClient.exists(collectionPath, null, true);
+          if (stat.getVersion() <= current.getZNodeVersion()) {
+            //we already have the latest version
+            if (current.isPerReplicaState()) {
+              PerReplicaStates prs = current.getPerReplicaStates();
+              if (prs != null && prs.cversion <= stat.getCversion()) {
+                DocCollection newState = current.copyWith(PerReplicaStatesFetcher.fetch(collectionPath, zkClient, null));
+                if (collectionWatches.updateDocCollection(collection, newState)) {
+                  constructState(Collections.singleton(collection));
+                }
+                return;
+              } else {
+                return;
+              }
+            } else {
+              return;
+            }
+          }
+        }
         // Exists as a watched collection, force a refresh.
         log.debug("Forcing refresh of watched collection state for {}", collection);
         DocCollection newState = fetchCollectionState(collection, null);
@@ -1953,6 +1975,24 @@ public class ZkStateReader implements SolrCloseable {
     }
     if (closed) {
       throw new AlreadyClosedException();
+    }
+    DocCollection currentColl = clusterState.getCollection(collection);
+    if (currentColl != null) {
+      //we really wish to avoid the watches
+      if (predicate.test(currentColl)) {
+        return currentColl;
+      }
+      Stat stat = null;
+      try {
+        stat = zkClient.exists(getCollectionPath(collection), null, true);
+        if (stat != null && currentColl.isModified(stat.getVersion(), stat.getCversion())) {
+          //this is already modified and we should fetch a fresh copy
+          DocCollection c = getCollectionLive(collection);
+          if (c != null && predicate.test(c)) return c;
+        }
+      } catch (KeeperException e) {
+        //go ahead with a collection watch
+      }
     }
 
     final CountDownLatch latch = new CountDownLatch(1);
