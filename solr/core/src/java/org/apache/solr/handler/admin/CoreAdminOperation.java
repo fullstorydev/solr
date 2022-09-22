@@ -110,8 +110,12 @@ public enum CoreAdminOperation implements CoreAdminOp {
 
         boolean newCollection = params.getBool(CoreAdminParams.NEW_COLLECTION, false);
 
-        coreContainer.create(coreName, instancePath, coreParams, newCollection);
-
+        coreContainer.timers.init();
+        try {
+            coreContainer.create(coreName, instancePath, coreParams, newCollection);
+        } finally {
+            coreContainer.timers.destroy();
+        }
         it.rsp.add("core", coreName);
       }),
   UNLOAD_OP(

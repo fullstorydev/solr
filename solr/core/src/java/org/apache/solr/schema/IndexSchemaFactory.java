@@ -31,6 +31,7 @@ import org.apache.solr.cloud.ZkSolrResourceLoader;
 import org.apache.solr.common.ConfigNode;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
+import org.apache.solr.common.Timer;
 import org.apache.solr.common.util.ObjectCache;
 import org.apache.solr.common.util.Pair;
 import org.apache.solr.core.ConfigSetService;
@@ -162,8 +163,13 @@ public abstract class IndexSchemaFactory implements NamedListInitializedPlugin {
             ? c
             : () -> {
               listener.accept(name);
-              return c.get();
-            };
+          Timer.TLInst.start("ISF.getFromCache.c.get():"+name);
+          try {
+            return c.get();
+          } finally {
+            Timer.TLInst.start("ISF.getFromCache.c.get():"+name);
+          }
+        };
 
     if (loader instanceof ZkSolrResourceLoader) {
       ZkSolrResourceLoader zkLoader = (ZkSolrResourceLoader) loader;

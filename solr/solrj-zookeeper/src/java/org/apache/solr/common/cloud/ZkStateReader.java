@@ -510,7 +510,7 @@ public class ZkStateReader implements SolrCloseable {
           return;
         }
       } else if (collectionWatches.watchedCollections().contains(collection)) {
-        DocCollection current = collectionWatches.getDocCollection(collection);
+      /*  DocCollection current = collectionWatches.getDocCollection(collection);
         if(current != null) {
           String collectionPath = getCollectionPath(collection);
           Stat stat = zkClient.exists(collectionPath, null, true);
@@ -531,7 +531,7 @@ public class ZkStateReader implements SolrCloseable {
               return;
             }
           }
-        }
+        }*/
         // Exists as a watched collection, force a refresh.
         log.debug("Forcing refresh of watched collection state for {}", collection);
         DocCollection newState = fetchCollectionState(collection, null);
@@ -1976,7 +1976,7 @@ public class ZkStateReader implements SolrCloseable {
     if (closed) {
       throw new AlreadyClosedException();
     }
-    DocCollection currentColl = clusterState.getCollection(collection);
+  /*  DocCollection currentColl = clusterState.getCollection(collection);
     if (currentColl != null) {
       //we really wish to avoid the watches
       if (predicate.test(currentColl)) {
@@ -1993,7 +1993,7 @@ public class ZkStateReader implements SolrCloseable {
       } catch (KeeperException e) {
         //go ahead with a collection watch
       }
-    }
+    }*/
 
     final CountDownLatch latch = new CountDownLatch(1);
     waitLatches.add(latch);

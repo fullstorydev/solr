@@ -1480,7 +1480,10 @@ public class CoreContainer {
         SolrCore core;
         try {
           solrCores.waitAddPendingCoreOps(cd.getName());
+          Timer.TLInst.start("CC.create().createFromDescriptor()");
           core = createFromDescriptor(cd, true, newCollection);
+          Timer.TLInst.end("CC.create().createFromDescriptor()");
+
           // Write out the current core properties in case anything changed when the core was
           // created
           coresLocator.persist(this, cd);
