@@ -1073,12 +1073,19 @@ public class SolrCore implements SolrInfoBean, Closeable {
 
       this.solrConfig = configSet.getSolrConfig();
       this.resourceLoader = configSet.getSolrConfig().getResourceLoader();
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().resourceLoader.initCore()");
       this.resourceLoader.initCore(this);
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().resourceLoader.initCore()");
+
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().getIndexSchema()");
       IndexSchema schema = configSet.getIndexSchema();
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().getIndexSchema()");
 
       this.configSetProperties = configSet.getProperties();
       // Initialize the metrics manager
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().initCoreMetricManager()");
       this.coreMetricManager = initCoreMetricManager(solrConfig);
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().initCoreMetricManager()");
       this.circuitBreakerManager = initCircuitBreakerManager();
       solrMetricsContext = coreMetricManager.getSolrMetricsContext();
       this.coreMetricManager.loadReporters();
@@ -1105,7 +1112,10 @@ public class SolrCore implements SolrInfoBean, Closeable {
       setLatestSchema(schema);
 
       // initialize core metrics
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().initializeMetrics()");
       initializeMetrics(solrMetricsContext, null);
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().initializeMetrics()");
+
 
       SolrFieldCacheBean solrFieldCacheBean = new SolrFieldCacheBean();
       // this is registered at the CONTAINER level because it's not core-specific - for now we
@@ -1121,8 +1131,10 @@ public class SolrCore implements SolrInfoBean, Closeable {
       this.snapshotMgr = initSnapshotMetaDataManager();
       this.solrDelPolicy = initDeletionPolicy(delPolicy);
 
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().initCodec()");
       this.codec = initCodec(solrConfig, this.schema);
       initIndex(prev != null, reload);
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().initCodec()");
 
       initWriters();
       qParserPlugins.init(QParserPlugin.standardPlugins, this);
@@ -1135,17 +1147,22 @@ public class SolrCore implements SolrInfoBean, Closeable {
       updateProcessorChains = loadUpdateProcessorChains();
       reqHandlers = new RequestHandlers(this);
       reqHandlers.initHandlersFromConfig(solrConfig);
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().jerseyAppHandler()");
       jerseyAppHandler =
           new ApplicationHandler(reqHandlers.getRequestHandlers().getJerseyEndpoints());
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().jerseyAppHandler()");
 
       // cause the executor to stall so firstSearcher events won't fire
       // until after inform() has been called for all components.
       // searchExecutor must be single-threaded for this to work
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().searcherExecutor.submit()");
       searcherExecutor.submit(
           () -> {
             latch.await();
             return null;
           });
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().searcherExecutor.submit()");
+
 
       this.updateHandler = initUpdateHandler(updateHandler);
 
@@ -1167,7 +1184,10 @@ public class SolrCore implements SolrInfoBean, Closeable {
       // choose to block on registering until properties can be fetched from an MBean,
       // and a SolrCoreAware MBean may have properties that depend on getting a Searcher
       // from the core.
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().resourceLoader.inform()");
       resourceLoader.inform(infoRegistry);
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().resourceLoader.inform()");
+
 
       // Allow the directory factory to report metrics
       if (directoryFactory instanceof SolrMetricProducer) {
@@ -1177,7 +1197,9 @@ public class SolrCore implements SolrInfoBean, Closeable {
 
       // seed version buckets with max from index during core initialization ... requires a
       // searcher!
+      org.apache.solr.common.Timer.TLInst.start("SolrCore().seedVersionBuckets()");
       seedVersionBuckets();
+      org.apache.solr.common.Timer.TLInst.end("SolrCore().seedVersionBuckets()");
 
       bufferUpdatesIfConstructing(coreDescriptor);
 

@@ -1607,7 +1607,9 @@ public class CoreContainer {
         zkSys.getZkController().preRegister(dcore, publishState);
       }
 
+      Timer.TLInst.start("CC.createFromDescriptor.coreConfigService.loadConfigSet()");
       ConfigSet coreConfig = coreConfigService.loadConfigSet(dcore);
+      Timer.TLInst.end("CC.createFromDescriptor.coreConfigService.loadConfigSet()");
       dcore.setConfigSetTrusted(coreConfig.isTrusted());
       if (log.isInfoEnabled()) {
         log.info(
@@ -1617,17 +1619,23 @@ public class CoreContainer {
             dcore.isConfigSetTrusted());
       }
       try {
+        Timer.TLInst.start("CC.createFromDescriptor.new SolrCore()");
         core = new SolrCore(this, dcore, coreConfig);
+        Timer.TLInst.end("CC.createFromDescriptor.new SolrCore()");
       } catch (SolrException e) {
         core = processCoreCreateException(e, dcore, coreConfig);
       }
 
       // always kick off recovery if we are in non-Cloud mode
       if (!isZooKeeperAware() && core.getUpdateHandler().getUpdateLog() != null) {
+        Timer.TLInst.start("CC.createFromDescriptor.recoverFromLog()");
         core.getUpdateHandler().getUpdateLog().recoverFromLog();
+        Timer.TLInst.end("CC.createFromDescriptor.recoverFromLog()");
       }
 
+      Timer.TLInst.start("CC.createFromDescriptor.registerCore()");
       registerCore(dcore, core, publishState, newCollection);
+      Timer.TLInst.end("CC.createFromDescriptor.registerCore()");
 
       return core;
     } catch (Exception e) {

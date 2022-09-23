@@ -1976,7 +1976,7 @@ public class ZkStateReader implements SolrCloseable {
     if (closed) {
       throw new AlreadyClosedException();
     }
-  /*  DocCollection currentColl = clusterState.getCollection(collection);
+    DocCollection currentColl = clusterState.getCollection(collection);
     if (currentColl != null) {
       //we really wish to avoid the watches
       if (predicate.test(currentColl)) {
@@ -1993,7 +1993,7 @@ public class ZkStateReader implements SolrCloseable {
       } catch (KeeperException e) {
         //go ahead with a collection watch
       }
-    }*/
+    }
 
     final CountDownLatch latch = new CountDownLatch(1);
     waitLatches.add(latch);
