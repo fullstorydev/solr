@@ -988,7 +988,12 @@ public class CoreContainer {
                         zkSys.getZkController().throwErrorIfReplicaReplaced(cd);
                       }
                       solrCores.waitAddPendingCoreOps(cd.getName());
-                      core = createFromDescriptor(cd, false, false);
+                      timers.init();
+                      try {
+                        core = createFromDescriptor(cd, false, false);
+                      } finally {
+                        timers.destroy();
+                      }
                     } finally {
                       solrCores.removeFromPendingOps(cd.getName());
                       if (asyncSolrCoreLoad) {
