@@ -66,6 +66,7 @@ import org.apache.solr.common.ConfigNode;
 import org.apache.solr.common.MapSerializable;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
+import org.apache.solr.common.Timer;
 import org.apache.solr.common.util.IOUtils;
 import org.apache.solr.common.util.Utils;
 import org.apache.solr.handler.component.SearchComponent;
@@ -393,6 +394,7 @@ public class SolrConfig implements MapSerializable {
   }
 
   private IndexSchemaFactory.VersionedConfig readXml(SolrResourceLoader loader, String name) {
+    Timer.TLInst.start("SolrConfig.readXml()");
     try {
       ResourceProvider rp = new ResourceProvider(loader, name);
       XmlConfigFile xml = new XmlConfigFile(loader, rp, name, null, "/config/", null);
@@ -401,6 +403,8 @@ public class SolrConfig implements MapSerializable {
           new DataConfigNode(new DOMConfigNode(xml.getDocument().getDocumentElement())));
     } catch (IOException e) {
       throw new SolrException(ErrorCode.SERVER_ERROR, e);
+    } finally {
+      Timer.TLInst.end("SolrConfig.readXml()");
     }
   }
 

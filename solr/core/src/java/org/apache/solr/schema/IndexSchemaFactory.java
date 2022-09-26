@@ -135,6 +135,7 @@ public abstract class IndexSchemaFactory implements NamedListInitializedPlugin {
 
   private static VersionedConfig loadConfig(
       InputStream schemaInputStream, SolrResourceLoader loader, String name) {
+    Timer.TLInst.start("ISF.loadConfig()");
     try {
       InputStream is = (schemaInputStream == null ? loader.openResource(name) : schemaInputStream);
       ConfigNode node = getParsedSchema(is, loader, name);
@@ -145,6 +146,8 @@ public abstract class IndexSchemaFactory implements NamedListInitializedPlugin {
       return new VersionedConfig(version, node);
     } catch (Exception e) {
       throw new SolrException(ErrorCode.SERVER_ERROR, "Error fetching schema", e);
+    } finally {
+      Timer.TLInst.end("ISF.loadConfig()");
     }
   }
 
@@ -163,12 +166,7 @@ public abstract class IndexSchemaFactory implements NamedListInitializedPlugin {
             ? c
             : () -> {
               listener.accept(name);
-          Timer.TLInst.start("ISF.getFromCache.c.get():"+name);
-          try {
-            return c.get();
-          } finally {
-            Timer.TLInst.start("ISF.getFromCache.c.get():"+name);
-          }
+          return c.get();
         };
 
     if (loader instanceof ZkSolrResourceLoader) {
@@ -197,11 +195,17 @@ public abstract class IndexSchemaFactory implements NamedListInitializedPlugin {
 
   public static ConfigNode getParsedSchema(InputStream is, SolrResourceLoader loader, String name)
       throws IOException, SAXException, ParserConfigurationException {
-    XmlConfigFile schemaConf = null;
-    InputSource inputSource = new InputSource(is);
-    inputSource.setSystemId(SystemIdResolver.createSystemIdFromResourceName(name));
-    schemaConf = new XmlConfigFile(loader, SCHEMA, inputSource, "/" + SCHEMA + "/", null);
-    return new DataConfigNode(new DOMConfigNode(schemaConf.getDocument().getDocumentElement()));
+    Timer.TLInst.start("ISF.getParsedSchema()");
+    try {
+      XmlConfigFile schemaConf = null;
+      InputSource inputSource = new InputSource(is);
+      inputSource.setSystemId(SystemIdResolver.createSystemIdFromResourceName(name));
+      schemaConf = new XmlConfigFile(loader, SCHEMA, inputSource, "/" + SCHEMA + "/", null);
+      return new DataConfigNode(new DOMConfigNode(schemaConf.getDocument().getDocumentElement()));
+    } finally {
+      Timer.TLInst.end("ISF.getParsedSchema()");
+
+    }
   }
 
   public static class VersionedConfig {

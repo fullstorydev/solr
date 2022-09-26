@@ -48,10 +48,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.ZkClientClusterStateProvider;
-import org.apache.solr.common.AlreadyClosedException;
-import org.apache.solr.common.Callable;
-import org.apache.solr.common.SolrCloseable;
-import org.apache.solr.common.SolrException;
+import org.apache.solr.common.*;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.CollectionAdminParams;
 import org.apache.solr.common.params.CoreAdminParams;
@@ -1976,24 +1973,8 @@ public class ZkStateReader implements SolrCloseable {
     if (closed) {
       throw new AlreadyClosedException();
     }
-    DocCollection currentColl = clusterState.getCollection(collection);
-    if (currentColl != null) {
-      //we really wish to avoid the watches
-      if (predicate.test(currentColl)) {
-        return currentColl;
-      }
-      Stat stat = null;
-      try {
-        stat = zkClient.exists(getCollectionPath(collection), null, true);
-        if (stat != null && currentColl.isModified(stat.getVersion(), stat.getCversion())) {
-          //this is already modified and we should fetch a fresh copy
-          DocCollection c = getCollectionLive(collection);
-          if (c != null && predicate.test(c)) return c;
-        }
-      } catch (KeeperException e) {
-        //go ahead with a collection watch
-      }
-    }
+    DocCollection currentColl = checkPredicate(collection, predicate);
+    if (currentColl != null) return currentColl;
 
     final CountDownLatch latch = new CountDownLatch(1);
     waitLatches.add(latch);
@@ -2024,6 +2005,32 @@ public class ZkStateReader implements SolrCloseable {
         log.debug("Completed wait for {}", predicate);
       }
     }
+  }
+
+  private DocCollection checkPredicate(String collection, Predicate<DocCollection> predicate) throws InterruptedException {
+    DocCollection currentColl = clusterState.getCollection(collection);
+    if (currentColl != null) {
+      //we really wish to avoid the watches
+      if (predicate.test(currentColl)) {
+        return currentColl;
+      }
+      Stat stat = null;
+      try {
+        stat = zkClient.exists(getCollectionPath(collection), null, true);
+        if (stat != null ) {
+          if (currentColl.isModified(stat.getVersion(), stat.getCversion())) {
+            //this is already modified and we should fetch a fresh copy
+            Timer.TLInst.start("ZKSR.checkPredicate.getCollectionLive()");
+            DocCollection c = getCollectionLive(collection);
+            Timer.TLInst.end("ZKSR.checkPredicate.getCollectionLive()");
+            if (c != null && predicate.test(c)) return c;
+          }
+        }
+      } catch (KeeperException e) {
+        //go ahead with a collection watch
+      }
+    }
+    return null;
   }
 
   /**
