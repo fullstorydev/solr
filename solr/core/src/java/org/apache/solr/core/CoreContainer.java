@@ -992,7 +992,7 @@ public class CoreContainer {
                       try {
                         core = createFromDescriptor(cd, false, false);
                       } finally {
-                        timers.destroy();
+                        //timers.destroy();
                       }
                     } finally {
                       solrCores.removeFromPendingOps(cd.getName());
@@ -1001,10 +1001,11 @@ public class CoreContainer {
                       }
                     }
                     try {
-                      zkSys.registerInZk(core, true, false);
+                      zkSys.registerInZk(core, false, false);
                     } catch (RuntimeException e) {
                       SolrException.log(log, "Error registering SolrCore", e);
                     }
+                    timers.destroy();
                     return core;
                   }));
         }
