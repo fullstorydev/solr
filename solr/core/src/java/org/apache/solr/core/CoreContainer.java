@@ -1607,9 +1607,9 @@ public class CoreContainer {
       MDCLoggingContext.setCoreDescriptor(this, dcore);
       SolrIdentifierValidator.validateCoreName(dcore.getName());
       if (zkSys.getZkController() != null) {
-        Timer.TLInst.start("CC.createFromDescriptor.zkSys.getZkController().preRegister");
+        Timer.TLInst.start("CC.createFromDescriptor.preRegister");
         zkSys.getZkController().preRegister(dcore, publishState);
-        Timer.TLInst.end("CC.createFromDescriptor.zkSys.getZkController().preRegister");
+        Timer.TLInst.end("CC.createFromDescriptor.preRegister");
       }
 
       Timer.TLInst.start("CC.createFromDescriptor.coreConfigService.loadConfigSet()");
