@@ -1360,9 +1360,7 @@ public class ZkController implements Closeable {
       // in this case, we want to wait for the leader as long as the leader might
       // wait for a vote, at least - but also long enough that a large cluster has
       // time to get its act together
-      Timer.TLInst.start("ZKC.register.getLeader()");
       String leaderUrl = getLeader(cloudDesc, leaderVoteWait + 600000);
-      Timer.TLInst.start("ZKC.register.getLeader()");
 
       String ourUrl = ZkCoreNodeProps.getCoreUrl(baseUrl, coreName);
       log.debug("We are {} and leader is {}", ourUrl, leaderUrl);
@@ -1442,9 +1440,7 @@ public class ZkController implements Closeable {
       }
 
       // make sure we have an update cluster state right away
-      Timer.TLInst.start("ZKC.register.forceUpdateCollection()");
       zkStateReader.forceUpdateCollection(collection);
-      Timer.TLInst.start("ZKC.register.forceUpdateCollection()");
 
       // the watcher is added to a set so multiple calls of this method will left only one watcher
       zkStateReader.registerDocCollectionWatcher(

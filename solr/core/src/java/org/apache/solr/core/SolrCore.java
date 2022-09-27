@@ -1073,13 +1073,9 @@ public class SolrCore implements SolrInfoBean, Closeable {
 
       this.solrConfig = configSet.getSolrConfig();
       this.resourceLoader = configSet.getSolrConfig().getResourceLoader();
-      org.apache.solr.common.Timer.TLInst.start("SolrCore().resourceLoader.initCore()");
       this.resourceLoader.initCore(this);
-      org.apache.solr.common.Timer.TLInst.end("SolrCore().resourceLoader.initCore()");
 
-      org.apache.solr.common.Timer.TLInst.start("SolrCore().getIndexSchema()");
       IndexSchema schema = configSet.getIndexSchema();
-      org.apache.solr.common.Timer.TLInst.end("SolrCore().getIndexSchema()");
 
       this.configSetProperties = configSet.getProperties();
       // Initialize the metrics manager
@@ -1155,14 +1151,11 @@ public class SolrCore implements SolrInfoBean, Closeable {
       // cause the executor to stall so firstSearcher events won't fire
       // until after inform() has been called for all components.
       // searchExecutor must be single-threaded for this to work
-      org.apache.solr.common.Timer.TLInst.start("SolrCore().searcherExecutor.submit()");
       searcherExecutor.submit(
           () -> {
             latch.await();
             return null;
           });
-      org.apache.solr.common.Timer.TLInst.end("SolrCore().searcherExecutor.submit()");
-
 
       this.updateHandler = initUpdateHandler(updateHandler);
 
@@ -1197,9 +1190,7 @@ public class SolrCore implements SolrInfoBean, Closeable {
 
       // seed version buckets with max from index during core initialization ... requires a
       // searcher!
-      org.apache.solr.common.Timer.TLInst.start("SolrCore().seedVersionBuckets()");
       seedVersionBuckets();
-      org.apache.solr.common.Timer.TLInst.end("SolrCore().seedVersionBuckets()");
 
       bufferUpdatesIfConstructing(coreDescriptor);
 
