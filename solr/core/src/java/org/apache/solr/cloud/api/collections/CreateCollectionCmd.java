@@ -217,27 +217,29 @@ public class CreateCollectionCmd implements CollApiCmds.CollectionApiCommand {
         } else {
           ccc.offerStateUpdate(Utils.toJSON(message));
         }
-
-        // wait for a while until we see the collection
-        TimeOut waitUntil =
-            new TimeOut(30, TimeUnit.SECONDS, ccc.getSolrCloudManager().getTimeSource());
-        boolean created = false;
-        while (!waitUntil.hasTimedOut()) {
-          waitUntil.sleep(100);
-          created = ccc.getSolrCloudManager().getClusterState().hasCollection(collectionName);
-          if (created) break;
-        }
-        if (!created) {
-          throw new SolrException(
-              SolrException.ErrorCode.SERVER_ERROR,
-              "Could not fully create collection: " + collectionName);
-        }
-
-        // refresh cluster state (value read below comes from Zookeeper watch firing following the
-        // update done previously, be it by Overseer or by this thread when updates are distributed)
-        clusterState = ccc.getSolrCloudManager().getClusterState();
-        newColl = clusterState.getCollection(collectionName);
       }
+      // wait for a while until we see the collection
+      TimeOut waitUntil =
+              new TimeOut(30, TimeUnit.SECONDS, ccc.getSolrCloudManager().getTimeSource());
+      boolean created = false;
+      while (!waitUntil.hasTimedOut()) {
+        waitUntil.sleep(100);
+        created = ccc.getSolrCloudManager().getClusterState().hasCollection(collectionName);
+        if (created) {
+          log.info("collection : {} has become visible in solr cloud manager", collectionName);
+          break;
+        }
+      }
+      if (!created) {
+        throw new SolrException(
+                SolrException.ErrorCode.SERVER_ERROR,
+                "Could not fully create collection: " + collectionName);
+      }
+
+      // refresh cluster state (value read below comes from Zookeeper watch firing following the
+      // update done previously, be it by Overseer or by this thread when updates are distributed)
+      clusterState = ccc.getSolrCloudManager().getClusterState();
+      newColl = clusterState.getCollection(collectionName);
 
       final List<ReplicaPosition> replicaPositions;
       try {
