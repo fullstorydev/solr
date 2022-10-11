@@ -35,6 +35,7 @@ import org.apache.solr.common.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
+import org.noggit.CharArr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -246,7 +247,10 @@ public class ZkStateWriter {
             log.debug("going to delete state.json {}", path);
             reader.getZkClient().clean(path);
           } else {
-            byte[] data = Utils.toJSON(singletonMap(c.getName(), c));
+            CharArr out = new CharArr();
+            new Utils.MapWriterJSONWriter(out, 0)
+                .write(singletonMap(c.getName(), c)); // indentation by default
+            byte[] data = Utils.toUTF8(out);
             if (reader.getZkClient().exists(path, true)) {
               if (log.isDebugEnabled()) {
                 log.debug("going to update_collection {} version: {}", path, c.getZNodeVersion());

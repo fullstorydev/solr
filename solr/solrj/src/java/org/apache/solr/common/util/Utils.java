@@ -214,7 +214,7 @@ public class Utils {
     return writer;
   }
 
-  private static class MapWriterJSONWriter extends JSONWriter {
+  public static class MapWriterJSONWriter extends JSONWriter {
 
     public MapWriterJSONWriter(CharArr out, int indentSize) {
       super(out, indentSize);
